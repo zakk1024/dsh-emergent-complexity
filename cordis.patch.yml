@@ -1,0 +1,25 @@
+# dsh bundle patch: inserts the emergent-complexity rows into a profile's layer stack.
+# Two independent patch rows, one file:
+#   - `skill-emergent-complexity` : mounts the bundled `dsh-skill-filesystem` provider with
+#     its ONLY scanned root set to this package's `skills/` directory (providerName keeps
+#     it separate from the main filesystem provider; includeDefaultRoots: false drops the
+#     project/user roots and the default bundled dir). The `emergent-complexity` skill is
+#     discovered as `skills/emergent-complexity/SKILL.md`, one level under that root —
+#     exactly how bundled skills are meant to ship. Catalog and body have separate
+#     lifecycles: editing the file body takes effect on the next catalog read, no reinstall.
+#   - `tool-emergent-complexity` : the subpath plugin (./tools -> ./lib/tools.js). It
+#     registers the three on-disk verification tools (ei_audit, ei_census,
+#     ei_archive_reset) directly on the `tools` service for the idea-search archive
+#     (ei-archive/...).
+# Disabling just `tool-emergent-complexity` keeps the skill text (agents then count
+# manually — the degraded single-context mode declared in the skill itself).
+
+- insert:
+    - id: skill-emergent-complexity
+      name: '@deepseek-ai/dsh-skill-filesystem'
+      config:
+        providerName: emergent-complexity
+        includeDefaultRoots: false
+        bundledSkillDir: !!js process.getBuiltinModule('node:path').join(process.getBuiltinModule('node:path').dirname(process.getBuiltinModule('node:module').createRequire(baseUrl).resolve('dsh-emergent-complexity/package.json')), 'skills')
+    - id: tool-emergent-complexity
+      name: 'dsh-emergent-complexity/tools'

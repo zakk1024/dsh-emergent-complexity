@@ -1,0 +1,35 @@
+{
+  "name": "dsh-emergent-complexity",
+  "version": "1.0.0",
+  "description": "Traceable combinatorial ideation skill for DeepSeek Harness: the single-file emergent-complexity idea-search loop (nine-step cycle, four gates, descriptor-grid honest counting) over the on-disk ei-archive/ search archive, plus three on-disk verification tools (ei_audit, ei_census, ei_archive_reset) for that archive.",
+  "private": true,
+  "type": "module",
+  "main": "./lib/index.js",
+  "icon": "assets/icon.svg",
+  "exports": {
+    ".": "./lib/index.js",
+    "./tools": "./lib/tools.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib/index.js",
+    "lib/tools.js",
+    "skills",
+    "assets/icon.svg",
+    "assets/hero.svg",
+    "assets/loop.svg",
+    "assets/gates.svg",
+    "assets/grid.svg",
+    "assets/trace.svg",
+    "README.md",
+    "LICENSE",
+    "cordis.patch.yml"
+  ],
+  "license": "MIT",
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}
