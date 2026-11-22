@@ -23,3 +23,7 @@
         bundledSkillDir: !!js process.getBuiltinModule('node:path').join(process.getBuiltinModule('node:path').dirname(process.getBuiltinModule('node:module').createRequire(baseUrl).resolve('dsh-emergent-complexity/package.json')), 'skills')
     - id: tool-emergent-complexity
       name: 'dsh-emergent-complexity/tools'
+    - id: emergent-complexity-web
+      name: 'dsh-emergent-complexity'
+    - id: studio-emergent-complexity
+      name: 'dsh-emergent-complexity/studio'

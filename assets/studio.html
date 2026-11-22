@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Emergent Complexity Studio</title>
+<style>
+:root{
+  --bg:#0e1116; --panel:#151a21; --panel2:#1b212a; --line:#242c37; --line2:#303a48;
+  --fg:#dde5ef; --muted:#93a0b1; --dim:#6f7c8d; --acc:#7dd3fc; --acc2:#38bdf8; --ok:#4ade80; --warn:#fbbf24; --bad:#f87171;
+  --mono:ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--fg);font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif;overflow:hidden}
+#app{display:flex;flex-direction:column;height:100%}
+header{display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#12171d,#0f1319)}
+.brand{display:flex;align-items:center;gap:9px;min-width:0}
+.brand .mark{width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#0ea5e9,#22d3ee);display:grid;place-items:center;color:#04121a;font-weight:700;font-size:13px}
+.brand h1{font-size:14px;margin:0;letter-spacing:.2px;white-space:nowrap}
+.brand small{color:var(--dim);font-size:11px;white-space:nowrap}
+.spacer{flex:1}
+.rootbar{display:flex;gap:6px;align-items:center;flex:1;max-width:620px}
+.rootbar input{flex:1;background:#0b0f14;border:1px solid var(--line2);color:var(--fg);padding:7px 9px;border-radius:7px;font-family:var(--mono);font-size:12px;min-width:80px}
+button{background:#1d2530;border:1px solid var(--line2);color:var(--fg);padding:7px 11px;border-radius:7px;cursor:pointer;font-size:12.5px;white-space:nowrap}
+button:hover{background:#243040;border-color:#3b4a5c}
+button.primary{background:linear-gradient(135deg,#0284c7,#0891b2);border-color:#0ea5e9;color:#f0fbff}
+button.primary:hover{filter:brightness(1.1)}
+button.ghost{background:transparent}
+button.small{padding:3px 7px;font-size:11px}
+button:disabled{opacity:.45;cursor:default}
+.chip{font-size:11px;padding:3px 8px;border-radius:20px;border:1px solid var(--line2);color:var(--muted);background:#11161c}
+.chip.ok{border-color:#1d5c37;color:#7ee2a8;background:#0d1a13}
+.chip.warn{border-color:#5c4a1d;color:#f6cf72;background:#1a150b}
+.chip.bad{border-color:#5c2626;color:#f6a1a1;background:#1a0e0e}
+main{flex:1;display:flex;min-height:0}
+.rail{width:300px;min-width:240px;border-right:1px solid var(--line);background:#101419;display:flex;flex-direction:column;min-height:0}
+.railHead{padding:10px 12px 6px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--line)}
+.railHead h2{font-size:12px;margin:0;color:var(--muted);font-weight:600;letter-spacing:.4px;text-transform:uppercase}
+.railBody{flex:1;overflow:auto;padding:10px 12px 14px}
+.stage{flex:1;min-width:0;display:flex;flex-direction:column;min-height:0}
+.tabs{display:flex;gap:2px;padding:8px 12px 0;border-bottom:1px solid var(--line)}
+.tab{padding:7px 13px;border:1px solid transparent;border-bottom:none;border-radius:8px 8px 0 0;color:var(--muted);cursor:pointer;font-size:12.5px}
+.tab.on{background:#171d25;border-color:var(--line);color:var(--fg)}
+.pane{flex:1;overflow:auto;padding:14px;min-height:0}
+.pane[hidden]{display:none}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px}
+.card h3{margin:0 0 8px;font-size:12.5px;color:#cfe3f5;font-weight:600}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.field{display:flex;flex-direction:column;gap:4px;margin-bottom:8px}
+.field label{font-size:11px;color:var(--dim)}
+.field input,.field textarea,.field select{background:#0b0f14;border:1px solid var(--line2);color:var(--fg);padding:7px 8px;border-radius:7px;font-size:12.5px;width:100%;font-family:inherit}
+.field textarea{resize:vertical;min-height:52px}
+.hint{color:var(--dim);font-size:11px;line-height:1.5}
+.mono{font-family:var(--mono);font-size:11.5px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.list{display:flex;flex-direction:column;gap:8px}
+.src{border:1px solid var(--line);border-radius:9px;padding:9px 10px;background:var(--panel2)}
+.src .t{font-size:12.5px;font-weight:600;color:#e3eef9;word-break:break-word}
+.src .u{font-size:11px;color:var(--acc);word-break:break-all;text-decoration:none}
+.src .n{font-size:11.5px;color:var(--muted);margin-top:3px}
+.src .meta{font-size:10.5px;color:var(--dim);margin-top:4px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.tag{font-size:10px;border:1px solid var(--line2);border-radius:4px;padding:0 4px;color:var(--dim)}
+.idea{border:1px solid var(--line);border-radius:9px;padding:10px;background:var(--panel2)}
+.idea .h{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.idea .id{font-family:var(--mono);font-size:11.5px;color:var(--acc)}
+.idea .cell{font-family:var(--mono);font-size:10.5px;color:var(--muted)}
+.idea .ops{font-size:10.5px;color:#c4b5fd}
+.idea .body{font-size:12px;color:#dbe7f3;margin-top:5px;line-height:1.55}
+.idea .claim{font-size:11px;color:var(--dim);margin-top:3px}
+.meter{height:7px;border-radius:4px;background:#0b0f14;border:1px solid var(--line2);overflow:hidden}
+.meter > i{display:block;height:100%;background:linear-gradient(90deg,#0ea5e9,#22d3ee);width:0%}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+.stat{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:9px 10px}
+.stat b{display:block;font-size:18px;font-weight:650;letter-spacing:.3px}
+.stat span{font-size:10.5px;color:var(--dim)}
+.result{border:1px solid var(--line);border-radius:8px;padding:8px;background:#11161c;margin-bottom:7px}
+.result .t{font-size:12px;color:#e0ebf6}
+.result .u{font-size:10.5px;color:var(--acc);word-break:break-all}
+.result .s{font-size:11px;color:var(--muted);margin-top:2px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;background:#182430;border:1px solid #2a3b4d;color:#dbe9f6;padding:9px 14px;border-radius:8px;font-size:12.5px;box-shadow:0 10px 30px rgba(0,0,0,.45);opacity:0;pointer-events:none;transition:opacity .18s;max-width:80%}
+.toast.on{opacity:1}
+.toast.bad{border-color:#5c2626;color:#ffd6d6}
+.empty{color:var(--dim);font-size:12px;padding:14px;text-align:center;border:1px dashed var(--line2);border-radius:9px}
+code.k{font-family:var(--mono);font-size:11px;color:#a7c7e7;background:#0b0f14;border:1px solid var(--line2);padding:1px 4px;border-radius:4px}
+@media (max-width:920px){ .rail{display:none} .stats{grid-template-columns:repeat(2,1fr)} }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="brand"><div class="mark">EC</div><div><h1>Emergent Complexity Studio</h1><small>idea supply · descriptor grid · trace archive</small></div></div>
+    <div class="spacer"></div>
+    <div class="rootbar">
+      <input id="root" placeholder="/path/to/project" spellcheck="false">
+      <button id="load" class="primary">載入專案</button>
+    </div>
+    <span id="mode" class="chip">未載入</span>
+  </header>
+  <main>
+    <aside class="rail">
+      <div class="railHead"><h2>資源池</h2><span id="srcCount" class="chip">0</span><div class="spacer"></div><button id="srcReset" class="ghost small" title="恢復策展清單">重置</button></div>
+      <div class="railBody">
+        <div class="card" style="padding:10px;margin-bottom:10px">
+          <h3>加入來源</h3>
+          <div class="field"><label>URL</label><input id="srcUrl" placeholder="https://…" spellcheck="false"></div>
+          <div class="field"><label>標題（可空）</label><input id="srcTitle" placeholder="來源名稱"></div>
+          <div class="field"><label>用途註記（可空）</label><input id="srcNote" placeholder="為什麼放進這條生產線"></div>
+          <div class="row"><button id="srcAdd" class="primary small">加入</button><span class="hint">重複 URL 會自動略過</span></div>
+        </div>
+        <div class="card" style="padding:10px;margin-bottom:10px">
+          <h3>搜尋逃生門</h3>
+          <div class="field"><input id="q" placeholder="查詢：MAP-Elites / novelty search …"></div>
+          <div class="row"><button id="qGo" class="small">搜尋</button><span id="qState" class="hint"></span></div>
+          <div id="qOut" style="margin-top:8px"></div>
+        </div>
+        <div id="srcList" class="list"></div>
+      </div>
+    </aside>
+    <section class="stage">
+      <div class="tabs">
+        <div class="tab on" data-tab="gen">生成器</div>
+        <div class="tab" data-tab="ideas">想法板</div>
+        <div class="tab" data-tab="grid">描述符格</div>
+        <div class="tab" data-tab="runs">執行紀錄</div>
+      </div>
+      <div class="pane" id="pane-gen">
+        <div class="stats">
+          <div class="stat"><b id="stEl">–</b><span>elements</span></div>
+          <div class="stat"><b id="stIdeas">–</b><span>trace ideas</span></div>
+          <div class="stat"><b id="stOcc">–</b><span>grid 已佔用</span></div>
+          <div class="stat"><b id="stRuns">–</b><span>run logs</span></div>
+        </div>
+        <div class="grid2">
+          <div class="card">
+            <h3>批次生成（確定性，不呼叫模型）</h3>
+            <div class="field"><label>數量（1–60）</label><input id="genCount" type="number" min="1" max="60" value="12"></div>
+            <div class="field"><label>seed（同 seed 同結果）</label><input id="genSeed" type="number" placeholder="留空＝現在時間"></div>
+            <div class="row"><button id="genGo" class="primary">生成並寫入 archive</button><button id="genReload" class="ghost small">重新讀取</button></div>
+            <p class="hint" style="margin-top:8px">寫入 <code class="k">ei-archive/ideas.jsonl</code>、<code class="k">grid.md</code> 與 <code class="k">ei-runs/run-N.md</code>。每個想法佔一個空 cell、1–3 個 operator、2–3 個 element，欄位依 §5 trace 規格；模型端的 critic／selection 留在會話裡做。</p>
+          </div>
+          <div class="card">
+            <h3>本輪結果</h3>
+            <div id="genOut" class="hint">尚未生成。</div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:12px">
+          <h3>格位佔用</h3>
+          <div class="meter"><i id="occBar"></i></div>
+          <p class="hint" id="occText" style="margin-top:6px">載入專案後顯示。</p>
+        </div>
+      </div>
+      <div class="pane" id="pane-ideas" hidden><div id="ideas" class="list"></div></div>
+      <div class="pane" id="pane-grid" hidden><div id="gridOut"></div></div>
+      <div class="pane" id="pane-runs" hidden><div id="runsOut" class="hint"></div></div>
+    </section>
+  </main>
+</div>
+<div id="toast" class="toast"></div>
+<script>
+(function(){
+  const $ = (id) => document.getElementById(id);
+  const state = { root: '', loaded: false, sources: [], grid: null, ideas: [], counts: {} };
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  let toastTimer = 0;
+  function toast(msg, bad) {
+    const t = $('toast');
+    t.textContent = msg;
+    t.className = 'toast on' + (bad ? ' bad' : '');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { t.className = 'toast' + (bad ? ' bad' : ''); }, 2600);
+  }
+  async function api(path, opts) {
+    const res = await fetch(path, Object.assign({ credentials: 'include', headers: { 'content-type': 'application/json' } }, opts || {}));
+    let body = null;
+    try { body = await res.json(); } catch (e) { body = { error: 'bad response ' + res.status }; }
+    if (!res.ok && !body.error) body.error = 'HTTP ' + res.status;
+    return body;
+  }
+  function setMode(text, cls) {
+    const m = $('mode');
+    m.textContent = text;
+    m.className = 'chip' + (cls ? ' ' + cls : '');
+  }
+  function renderSources() {
+    $('srcCount').textContent = String(state.sources.length);
+    const box = $('srcList');
+    if (!state.sources.length) { box.innerHTML = '<div class="empty">尚無來源。載入專案後會從策展清單初始化。</div>'; return; }
+    box.innerHTML = state.sources.map((s) => {
+      const tags = (s.tags || []).map((t) => '<span class="tag">' + esc(t) + '</span>').join(' ');
+      return '<div class="src"><div class="t">' + esc(s.title || s.url) + '</div>'
+        + '<a class="u" href="' + esc(s.url) + '" target="_blank" rel="noreferrer">' + esc(s.url) + '</a>'
+        + (s.note ? '<div class="n">' + esc(s.note) + '</div>' : '')
+        + '<div class="meta">' + tags + '<span class="tag">' + esc(s.origin || 'user') + '</span>'
+        + '<div class="spacer"></div><button class="small ghost" data-rm="' + esc(s.id) + '">移除</button></div></div>';
+    }).join('');
+  }
+  function renderStats(st) {
+    $('stEl').textContent = String(st.elements.length);
+    $('stIdeas').textContent = String(st.ideaCount);
+    $('stOcc').textContent = st.grid.occupied + '/' + st.grid.total;
+    $('stRuns').textContent = String(st.runs);
+    const pct = st.grid.total ? Math.round((st.grid.occupied / st.grid.total) * 100) : 0;
+    $('occBar').style.width = pct + '%';
+    $('occText').textContent = '已佔用 ' + st.grid.occupied + ' 格，空 ' + st.grid.empty + ' 格，共 ' + st.grid.total + ' 格（' + pct + '%）。';
+    state.counts = st.grid;
+    $('genOut').innerHTML = '已載入：elements ' + st.elements.length + '、ideas ' + st.ideaCount + '、runs ' + st.runs + (st.lastRun ? '（最新 ' + esc(st.lastRun) + '）' : '') + '。';
+  }
+  function renderIdeas(items) {
+    const box = $('ideas');
+    if (!items.length) { box.innerHTML = '<div class="empty">archive 裡還沒有想法。先到生成器跑一批。</div>'; return; }
+    box.innerHTML = items.map((i) => {
+      const d = i.descriptor || {};
+      const cell = '(' + esc(d.scale) + ', ' + esc(d.mechanism) + ', ' + esc(d.context) + ')';
+      const ops = (i.operators || []).join('+');
+      const els = (i.tree && i.tree.elements ? i.tree.elements : []).join(' ');
+      return '<div class="idea"><div class="h"><span class="id">' + esc(i.id) + '</span><span class="cell">' + cell + '</span><span class="ops">' + esc(ops) + '</span>'
+        + '<span class="tag">' + esc(els) + '</span></div>'
+        + '<div class="body">' + esc(i.body || '') + '</div>'
+        + '<div class="claim">' + esc(i.claim || '') + '</div></div>';
+    }).join('');
+  }
+  function renderGrid(st) {
+    const cells = st.grid.cells || [];
+    if (!cells.length) { $('gridOut').innerHTML = '<div class="empty">grid.md 尚無已佔用格。</div>'; return; }
+    $('gridOut').innerHTML = '<div class="list">' + cells.map((c) => {
+      const cell = '(' + esc(c.cell.scale) + ', ' + esc(c.cell.mechanism) + ', ' + esc(c.cell.context) + ')';
+      return '<div class="idea"><div class="h"><span class="cell">' + cell + '</span><span class="id">' + esc(c.id) + '</span><span class="ops">' + esc(c.ops || '—') + '</span></div></div>';
+    }).join('') + '</div>';
+  }
+  function renderRuns(st) {
+    $('runsOut').innerHTML = '執行紀錄 <code class="k">ei-runs/run-*.md</code>：' + st.runs + ' 份。'
+      + (st.lastRun ? '<br>最新：<code class="k">' + esc(st.lastRun) + '</code>' : '<br>尚未生成 run log。')
+      + '<br><br>每份 run log 依 §12.4 六欄表格記錄（轮次／相位／重复率／结论①／结论②／选择理由／参数版本），並帶 <code class="k">elements:N</code> 行供稽核。';
+  }
+  async function load() {
+    const root = $('root').value.trim();
+    if (!root) { toast('先填專案資料夾', true); return; }
+    setMode('載入中…', 'warn');
+    const st = await api('/api/emergent/state?root=' + encodeURIComponent(root));
+    if (st.error) { setMode('載入失敗', 'bad'); toast(st.error, true); return; }
+    state.root = st.root; state.loaded = true;
+    state.sources = st.sources.items; state.ideas = st.ideas;
+    renderSources(); renderStats(st); renderIdeas(st.ideas); renderGrid(st); renderRuns(st);
+    setMode('已載入 · ' + st.root.split('/').pop(), 'ok');
+    $('root').value = st.root;
+    try { localStorage.setItem('ec-studio-root', st.root); } catch (e) {}
+    if (st.sources.created) toast('已建立資源池：' + st.sources.items.length + ' 條策展來源');
+    if (st.elementsCreated) toast('archive 尚無 ELEMENTS，已寫入 10 個起始 element');
+  }
+  async function generate() {
+    if (!state.loaded) { toast('先載入專案', true); return; }
+    const count = Number($('genCount').value) || 12;
+    const seedRaw = $('genSeed').value.trim();
+    const seed = seedRaw ? Number(seedRaw) : undefined;
+    $('genGo').disabled = true;
+    setMode('生成中…', 'warn');
+    const out = await api('/api/emergent/generate', { method: 'POST', body: JSON.stringify({ root: state.root, count, seed }) });
+    $('genGo').disabled = false;
+    if (out.error) { setMode('生成失敗', 'bad'); toast(out.error, true); $('genOut').textContent = out.error; return; }
+    setMode('已生成', 'ok');
+    if (!out.added || !out.added.length) { toast(out.message || '沒有新增'); $('genOut').textContent = out.message || '沒有新增'; }
+    else {
+      toast('寫入 ' + out.added.length + ' 個想法（run ' + out.run + '，seed ' + out.seed + '）');
+      $('genOut').innerHTML = '<div class="list">' + out.added.slice(0, 8).map((i) => '<div class="idea"><div class="h"><span class="id">' + esc(i.id) + '</span><span class="cell">(' + esc(i.descriptor.scale) + ', ' + esc(i.descriptor.mechanism) + ', ' + esc(i.descriptor.context) + ')</span><span class="ops">' + esc(i.operators.join('+')) + '</span></div><div class="body">' + esc(i.body) + '</div></div>').join('') + '</div>'
+        + (out.added.length > 8 ? '<p class="hint">…另有 ' + (out.added.length - 8) + ' 個</p>' : '');
+    }
+    await load();
+  }
+  async function addSource(src) {
+    if (!state.loaded) { toast('先載入專案', true); return; }
+    const out = await api('/api/emergent/sources', { method: 'POST', body: JSON.stringify({ root: state.root, action: 'add', source: src }) });
+    if (out.error) { toast(out.error, true); return; }
+    if (out.duplicate) { toast('已在資源池中'); return; }
+    state.sources = out.items; renderSources(); toast('已加入資源池');
+  }
+  async function search() {
+    const q = $('q').value.trim();
+    if (!q) return;
+    $('qState').textContent = '搜尋中…';
+    const out = await api('/api/emergent/search', { method: 'POST', body: JSON.stringify({ query: q }) });
+    $('qState').textContent = out.ok ? out.results.length + ' 筆' : '失敗';
+    if (!out.ok) { $('qOut').innerHTML = '<div class="hint">' + esc(out.error) + '</div>'; return; }
+    $('qOut').innerHTML = out.results.map((r) => '<div class="result"><div class="t">' + esc(r.title) + '</div><div class="u">' + esc(r.url) + '</div>'
+      + (r.snippet ? '<div class="s">' + esc(r.snippet.slice(0, 220)) + '</div>' : '')
+      + '<div class="row" style="margin-top:5px"><button class="small" data-addq="' + esc(r.url) + '" data-title="' + esc(r.title) + '">加入資源池</button></div></div>').join('')
+      + (out.results.length ? '' : '<div class="hint">沒有結果，換個關鍵詞。</div>');
+  }
+  document.addEventListener('click', async (ev) => {
+    const rm = ev.target.closest('[data-rm]');
+    if (rm) {
+      const out = await api('/api/emergent/sources', { method: 'POST', body: JSON.stringify({ root: state.root, action: 'remove', id: rm.getAttribute('data-rm') }) });
+      if (out.error) { toast(out.error, true); return; }
+      state.sources = out.items; renderSources(); toast('已移除');
+      return;
+    }
+    const addq = ev.target.closest('[data-addq]');
+    if (addq) {
+      await addSource({ url: addq.getAttribute('data-addq'), title: addq.getAttribute('data-title'), note: 'search: ' + $('q').value.trim(), origin: 'search' });
+      return;
+    }
+    const tab = ev.target.closest('.tab');
+    if (tab) {
+      document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('on', t === tab));
+      document.querySelectorAll('.pane').forEach((p) => { p.hidden = p.id !== 'pane-' + tab.getAttribute('data-tab'); });
+    }
+  });
+  $('load').onclick = load;
+  $('root').addEventListener('keydown', (e) => { if (e.key === 'Enter') load(); });
+  $('genGo').onclick = generate;
+  $('genReload').onclick = load;
+  $('srcAdd').onclick = () => {
+    const url = $('srcUrl').value.trim();
+    if (!url) { toast('填 URL', true); return; }
+    addSource({ url, title: $('srcTitle').value.trim() || url, note: $('srcNote').value.trim(), origin: 'user' });
+    $('srcUrl').value = ''; $('srcTitle').value = ''; $('srcNote').value = '';
+  };
+  $('qGo').onclick = search;
+  $('q').addEventListener('keydown', (e) => { if (e.key === 'Enter') search(); });
+  $('srcReset').onclick = async () => {
+    if (!state.loaded) { toast('先載入專案', true); return; }
+    const out = await api('/api/emergent/sources', { method: 'POST', body: JSON.stringify({ root: state.root, action: 'reset' }) });
+    if (out.error) { toast(out.error, true); return; }
+    state.sources = out.items; renderSources(); toast('已恢復策展清單');
+  };
+  (function init() {
+    const p = new URLSearchParams(location.search);
+    let root = p.get('root') || '';
+    if (!root) { try { root = localStorage.getItem('ec-studio-root') || ''; } catch (e) {} }
+    $('root').value = root;
+    renderSources();
+    if (root) load();
+  })();
+})();
+</script>
+</body>
+</html>

@@ -1,7 +1,7 @@
 {
   "name": "dsh-emergent-complexity",
-  "version": "1.0.0",
-  "description": "Traceable combinatorial ideation skill for DeepSeek Harness: the single-file emergent-complexity idea-search loop (nine-step cycle, four gates, descriptor-grid honest counting) over the on-disk ei-archive/ search archive, plus three on-disk verification tools (ei_audit, ei_census, ei_archive_reset) for that archive.",
+  "version": "1.1.0",
+  "description": "Traceable combinatorial ideation skill for DeepSeek Harness: the single-file emergent-complexity idea-search loop (nine-step cycle, four gates, descriptor-grid honest counting) over the on-disk ei-archive/ search archive, plus three on-disk verification tools (ei_audit, ei_census, ei_archive_reset) for that archive. Adds the Emergent Complexity Studio: a project-scoped web workbench (source pool, deterministic trace generation, descriptor-grid meter, run logs) plus a curated research source pack.",
   "private": true,
   "type": "module",
   "main": "./lib/index.js",
@@ -10,11 +10,15 @@
     ".": "./lib/index.js",
     "./tools": "./lib/tools.js",
     "./cordis.patch.yml": "./cordis.patch.yml",
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./client": "./lib/client.js",
+    "./studio": "./lib/studio.js"
   },
   "files": [
     "lib/index.js",
     "lib/tools.js",
+    "lib/studio.js",
+    "lib/client.js",
     "skills",
     "assets/icon.svg",
     "assets/hero.svg",
@@ -22,6 +26,8 @@
     "assets/gates.svg",
     "assets/grid.svg",
     "assets/trace.svg",
+    "assets/studio.html",
+    "assets/source-pack.json",
     "README.md",
     "LICENSE",
     "cordis.patch.yml"
@@ -30,6 +36,14 @@
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-slots",
+        "@deepseek-ai/dsh-client-ui-primitives",
+        "@deepseek-ai/dsh-client-locale"
+      ]
     }
   }
 }
