@@ -83,7 +83,7 @@ main{flex:1;display:flex;min-height:0}
 .toast.bad{border-color:#5c2626;color:#ffd6d6}
 .empty{color:var(--dim);font-size:12px;padding:14px;text-align:center;border:1px dashed var(--line2);border-radius:9px}
 code.k{font-family:var(--mono);font-size:11px;color:#a7c7e7;background:#0b0f14;border:1px solid var(--line2);padding:1px 4px;border-radius:4px}
-@media (max-width:920px){ .rail{display:none} .stats{grid-template-columns:repeat(2,1fr)} }
+@media (max-width:920px){ main{flex-direction:column} .rail{width:auto;min-width:0;max-height:34vh;border-right:0;border-bottom:1px solid var(--line)} .railBody{max-height:calc(34vh - 38px)} .stats{grid-template-columns:repeat(2,1fr)} }
 </style>
 </head>
 <body>
@@ -162,6 +162,7 @@ code.k{font-family:var(--mono);font-size:11px;color:#a7c7e7;background:#0b0f14;b
   const $ = (id) => document.getElementById(id);
   const state = { root: '', loaded: false, sources: [], grid: null, ideas: [], counts: {} };
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const safeHref = (s) => /^(https?:\/\/|mailto:)/i.test(String(s || '')) ? esc(s) : '#';
   let toastTimer = 0;
   function toast(msg, bad) {
     const t = $('toast');
@@ -170,11 +171,18 @@ code.k{font-family:var(--mono);font-size:11px;color:#a7c7e7;background:#0b0f14;b
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => { t.className = 'toast' + (bad ? ' bad' : ''); }, 2600);
   }
+  const ERR_MAP = [['project folder not found', '找不到專案資料夾'], ['unauthorized', '登入狀態失效，請重新整理'], ['forbidden', '沒有權限'], ['generation lock timeout', '另一個生成正在進行，請稍後再試'], ['bad response', '伺服器回應異常']];
+  function friendly(msg) {
+    const m = String(msg || '');
+    for (const [en, zh] of ERR_MAP) if (m.includes(en)) return m.replace(en, zh);
+    return m;
+  }
   async function api(path, opts) {
     const res = await fetch(path, Object.assign({ credentials: 'include', headers: { 'content-type': 'application/json' } }, opts || {}));
     let body = null;
     try { body = await res.json(); } catch (e) { body = { error: 'bad response ' + res.status }; }
     if (!res.ok && !body.error) body.error = 'HTTP ' + res.status;
+    if (body && body.error) body.error = friendly(body.error);
     return body;
   }
   function setMode(text, cls) {
@@ -189,7 +197,7 @@ code.k{font-family:var(--mono);font-size:11px;color:#a7c7e7;background:#0b0f14;b
     box.innerHTML = state.sources.map((s) => {
       const tags = (s.tags || []).map((t) => '<span class="tag">' + esc(t) + '</span>').join(' ');
       return '<div class="src"><div class="t">' + esc(s.title || s.url) + '</div>'
-        + '<a class="u" href="' + esc(s.url) + '" target="_blank" rel="noreferrer">' + esc(s.url) + '</a>'
+        + '<a class="u" href="' + safeHref(s.url) + '" target="_blank" rel="noreferrer">' + esc(s.url) + '</a>'
         + (s.note ? '<div class="n">' + esc(s.note) + '</div>' : '')
         + '<div class="meta">' + tags + '<span class="tag">' + esc(s.origin || 'user') + '</span>'
         + '<div class="spacer"></div><button class="small ghost" data-rm="' + esc(s.id) + '">移除</button></div></div>';
@@ -204,7 +212,6 @@ code.k{font-family:var(--mono);font-size:11px;color:#a7c7e7;background:#0b0f14;b
     $('occBar').style.width = pct + '%';
     $('occText').textContent = '已佔用 ' + st.grid.occupied + ' 格，空 ' + st.grid.empty + ' 格，共 ' + st.grid.total + ' 格（' + pct + '%）。';
     state.counts = st.grid;
-    $('genOut').innerHTML = '已載入：elements ' + st.elements.length + '、ideas ' + st.ideaCount + '、runs ' + st.runs + (st.lastRun ? '（最新 ' + esc(st.lastRun) + '）' : '') + '。';
   }
   function renderIdeas(items) {
     const box = $('ideas');
@@ -236,17 +243,19 @@ code.k{font-family:var(--mono);font-size:11px;color:#a7c7e7;background:#0b0f14;b
   async function load() {
     const root = $('root').value.trim();
     if (!root) { toast('先填專案資料夾', true); return; }
+    state.loaded = false;
     setMode('載入中…', 'warn');
     const st = await api('/api/emergent/state?root=' + encodeURIComponent(root));
     if (st.error) { setMode('載入失敗', 'bad'); toast(st.error, true); return; }
     state.root = st.root; state.loaded = true;
     state.sources = st.sources.items; state.ideas = st.ideas;
     renderSources(); renderStats(st); renderIdeas(st.ideas); renderGrid(st); renderRuns(st);
+    $('genOut').innerHTML = '已載入：elements ' + st.elements.length + '、ideas ' + st.ideaCount + '、runs ' + st.runs + (st.lastRun ? '（最新 ' + esc(st.lastRun) + '）' : '') + '。';
     setMode('已載入 · ' + st.root.split('/').pop(), 'ok');
     $('root').value = st.root;
     try { localStorage.setItem('ec-studio-root', st.root); } catch (e) {}
     if (st.sources.created) toast('已建立資源池：' + st.sources.items.length + ' 條策展來源');
-    if (st.elementsCreated) toast('archive 尚無 ELEMENTS，已寫入 10 個起始 element');
+    if (st.elementsCreated) toast('archive 尚無 ELEMENTS；首次生成時會寫入 10 個起始 element');
   }
   async function generate() {
     if (!state.loaded) { toast('先載入專案', true); return; }
@@ -265,7 +274,13 @@ code.k{font-family:var(--mono);font-size:11px;color:#a7c7e7;background:#0b0f14;b
       $('genOut').innerHTML = '<div class="list">' + out.added.slice(0, 8).map((i) => '<div class="idea"><div class="h"><span class="id">' + esc(i.id) + '</span><span class="cell">(' + esc(i.descriptor.scale) + ', ' + esc(i.descriptor.mechanism) + ', ' + esc(i.descriptor.context) + ')</span><span class="ops">' + esc(i.operators.join('+')) + '</span></div><div class="body">' + esc(i.body) + '</div></div>').join('') + '</div>'
         + (out.added.length > 8 ? '<p class="hint">…另有 ' + (out.added.length - 8) + ' 個</p>' : '');
     }
-    await load();
+    await refreshState();
+  }
+  async function refreshState() {
+    const st = await api('/api/emergent/state?root=' + encodeURIComponent(state.root));
+    if (st.error) return;
+    state.sources = st.sources.items; state.ideas = st.ideas;
+    renderSources(); renderStats(st); renderIdeas(st.ideas); renderGrid(st); renderRuns(st);
   }
   async function addSource(src) {
     if (!state.loaded) { toast('先載入專案', true); return; }
@@ -286,6 +301,7 @@ code.k{font-family:var(--mono);font-size:11px;color:#a7c7e7;background:#0b0f14;b
       + '<div class="row" style="margin-top:5px"><button class="small" data-addq="' + esc(r.url) + '" data-title="' + esc(r.title) + '">加入資源池</button></div></div>').join('')
       + (out.results.length ? '' : '<div class="hint">沒有結果，換個關鍵詞。</div>');
   }
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { try { parent.postMessage({ type: 'ecx-close' }, '*'); } catch (err) {} } });
   document.addEventListener('click', async (ev) => {
     const rm = ev.target.closest('[data-rm]');
     if (rm) {
@@ -319,6 +335,7 @@ code.k{font-family:var(--mono);font-size:11px;color:#a7c7e7;background:#0b0f14;b
   $('q').addEventListener('keydown', (e) => { if (e.key === 'Enter') search(); });
   $('srcReset').onclick = async () => {
     if (!state.loaded) { toast('先載入專案', true); return; }
+    if (!confirm('恢復內建 20 條策展來源？你手動加入的來源會消失。')) return;
     const out = await api('/api/emergent/sources', { method: 'POST', body: JSON.stringify({ root: state.root, action: 'reset' }) });
     if (out.error) { toast(out.error, true); return; }
     state.sources = out.items; renderSources(); toast('已恢復策展清單');

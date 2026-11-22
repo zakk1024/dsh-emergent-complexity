@@ -239,17 +239,21 @@ Skill 內引用的 13 條文獻屬各自原作者；本 repo 只引用連結與�
 `ei-sources.json`），與 skill 的檔案格式完全相容（`ideas.jsonl` 欄位、`grid.md` 三欄格式、
 `run-N.md` 六欄表頭）。
 
-**安裝**：把本 repo 加入 DSH profile 的 bundles，例如
+**安裝**（兩步都必要；`dsh plugin add` 只裝依賴，不會替你改 bundles）：
 
-```bash
-dsh plugin --profile web add "file:$PWD"
-```
+1. 裝依賴：
+   ```bash
+   dsh plugin --profile web add "file:$PWD"
+   ```
+2. 在 `~/.dsh/profiles/web/package.json` 的 `dsh.profile.bundles` 加入 `"dsh-emergent-complexity"`
+   （缺這行，boot 會跳過本插件）。
+3. 重啟 `dsh web`，重新整理頁面。啟動後右上角出現「Emergent Studio」膠囊按鈕。
 
-或手動在 profile `package.json` 的 `dsh.profile.bundles` 加入 `dsh-emergent-complexity`，再
-`pnpm install`；改完後重啟 `dsh web`。
+**移除**（順序反過來，避免 boot 警告）：
 
-**移除**：從 profile 的 `dsh.profile.bundles` 移除同名條目（或 `dsh plugin --profile web remove dsh-emergent-complexity`），
-再 `pnpm install`、重啟。skill 與 tools 兩列會一起消失，`ei-archive/` 等產物留在你的專案資料夾，不會被刪。
+1. 先從 `dsh.profile.bundles` 移除 `"dsh-emergent-complexity"`。
+2. `dsh plugin --profile web remove dsh-emergent-complexity`。
+3. 重啟 `dsh web`。skill 與 tools 兩列一起消失；`ei-archive/` 等產物留在專案資料夾，不會被刪。
 
 **資源池**：`assets/source-pack.json` 內建 20 條可追溯文獻（context engineering、novelty search、
 MAP-Elites、FunSearch/AlphaEvolve、open-endedness、agent memory 等），可增刪；搜尋逃生門用
