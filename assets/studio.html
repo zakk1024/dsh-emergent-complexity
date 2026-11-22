@@ -34,13 +34,13 @@ button:disabled{opacity:.45;cursor:default}
 .chip.warn{border-color:#5c4a1d;color:#f6cf72;background:#1a150b}
 .chip.bad{border-color:#5c2626;color:#f6a1a1;background:#1a0e0e}
 main{flex:1;display:flex;min-height:0}
-.rail{width:300px;min-width:240px;border-right:1px solid var(--line);background:#101419;display:flex;flex-direction:column;min-height:0}
+.rail{width:330px;min-width:270px;border-right:1px solid var(--line);background:#101419;display:flex;flex-direction:column;min-height:0}
 .railHead{padding:10px 12px 6px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--line)}
 .railHead h2{font-size:12px;margin:0;color:var(--muted);font-weight:600;letter-spacing:.4px;text-transform:uppercase}
 .railBody{flex:1;overflow:auto;padding:10px 12px 14px}
 .stage{flex:1;min-width:0;display:flex;flex-direction:column;min-height:0}
-.tabs{display:flex;gap:2px;padding:8px 12px 0;border-bottom:1px solid var(--line)}
-.tab{padding:7px 13px;border:1px solid transparent;border-bottom:none;border-radius:8px 8px 0 0;color:var(--muted);cursor:pointer;font-size:12.5px}
+.tabs{display:flex;gap:2px;padding:8px 12px 0;border-bottom:1px solid var(--line);overflow-x:auto}
+.tab{padding:7px 13px;border:1px solid transparent;border-bottom:none;border-radius:8px 8px 0 0;color:var(--muted);cursor:pointer;font-size:12.5px;white-space:nowrap}
 .tab.on{background:#171d25;border-color:var(--line);color:var(--fg)}
 .pane{flex:1;overflow:auto;padding:14px;min-height:0}
 .pane[hidden]{display:none}
@@ -83,13 +83,15 @@ main{flex:1;display:flex;min-height:0}
 .toast.bad{border-color:#5c2626;color:#ffd6d6}
 .empty{color:var(--dim);font-size:12px;padding:14px;text-align:center;border:1px dashed var(--line2);border-radius:9px}
 code.k{font-family:var(--mono);font-size:11px;color:#a7c7e7;background:#0b0f14;border:1px solid var(--line2);padding:1px 4px;border-radius:4px}
-@media (max-width:920px){ main{flex-direction:column} .rail{width:auto;min-width:0;max-height:34vh;border-right:0;border-bottom:1px solid var(--line)} .railBody{max-height:calc(34vh - 38px)} .stats{grid-template-columns:repeat(2,1fr)} }
+.spin{display:inline-block;width:10px;height:10px;border:2px solid #2b3a4b;border-top-color:#22d3ee;border-radius:50%;animation:sp .8s linear infinite;vertical-align:-1px;margin-right:5px}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media (max-width:920px){ main{flex-direction:column} .rail{width:auto;min-width:0;max-height:38vh;border-right:0;border-bottom:1px solid var(--line)} .railBody{max-height:calc(38vh - 38px)} .stats{grid-template-columns:repeat(2,1fr)} }
 </style>
 </head>
 <body>
 <div id="app">
   <header>
-    <div class="brand"><div class="mark">EC</div><div><h1>Emergent Complexity Studio</h1><small>idea supply · descriptor grid · trace archive</small></div></div>
+    <div class="brand"><div class="mark">EC</div><div><h1>Emergent Complexity Studio</h1><small>LLM 資源策展 · 第一性原理拆解 · trace archive</small></div></div>
     <div class="spacer"></div>
     <div class="rootbar">
       <input id="root" placeholder="/path/to/project" spellcheck="false">
@@ -99,32 +101,63 @@ code.k{font-family:var(--mono);font-size:11px;color:#a7c7e7;background:#0b0f14;b
   </header>
   <main>
     <aside class="rail">
-      <div class="railHead"><h2>資源池</h2><span id="srcCount" class="chip">0</span><div class="spacer"></div><button id="srcReset" class="ghost small" title="恢復策展清單">重置</button></div>
+      <div class="railHead"><h2>元素欄</h2><span id="elCount" class="chip">0</span><div class="spacer"></div><span class="hint">LLM 拆解</span></div>
       <div class="railBody">
         <div class="card" style="padding:10px;margin-bottom:10px">
-          <h3>加入來源</h3>
-          <div class="field"><label>URL</label><input id="srcUrl" placeholder="https://…" spellcheck="false"></div>
-          <div class="field"><label>標題（可空）</label><input id="srcTitle" placeholder="來源名稱"></div>
-          <div class="field"><label>用途註記（可空）</label><input id="srcNote" placeholder="為什麼放進這條生產線"></div>
-          <div class="row"><button id="srcAdd" class="primary small">加入</button><span class="hint">重複 URL 會自動略過</span></div>
+          <h3>生成 elements</h3>
+          <div class="field"><label>數量（留白＝LLM 自行決定）</label><input id="elN" type="number" min="1" max="40" placeholder="例如 8；留白交給 LLM"></div>
+          <div class="row"><button id="elGo" class="primary small">生成 elements</button><span id="elState" class="hint"></span></div>
+          <p class="hint" style="margin-top:8px">LLM 以第一性原理把資源池拆成「名詞 + 機制 + variable 槽」。每次 run 都寫入 <code class="k">ELEMENTS.md</code>；去重後的最終清單才是生成器使用的元素。</p>
         </div>
-        <div class="card" style="padding:10px;margin-bottom:10px">
-          <h3>搜尋逃生門</h3>
-          <div class="field"><input id="q" placeholder="查詢：MAP-Elites / novelty search …"></div>
-          <div class="row"><button id="qGo" class="small">搜尋</button><span id="qState" class="hint"></span></div>
-          <div id="qOut" style="margin-top:8px"></div>
+        <div id="elList" class="list"></div>
+        <div class="card" style="padding:10px;margin-top:10px">
+          <h3>拆解紀錄</h3>
+          <div id="elRuns" class="hint">尚未生成。</div>
         </div>
-        <div id="srcList" class="list"></div>
       </div>
     </aside>
     <section class="stage">
       <div class="tabs">
-        <div class="tab on" data-tab="gen">生成器</div>
+        <div class="tab on" data-tab="pool">資源池</div>
+        <div class="tab" data-tab="gen">生成器</div>
         <div class="tab" data-tab="ideas">想法板</div>
         <div class="tab" data-tab="grid">描述符格</div>
         <div class="tab" data-tab="runs">執行紀錄</div>
       </div>
-      <div class="pane" id="pane-gen">
+      <div class="pane" id="pane-pool">
+        <div class="card" style="margin-bottom:12px">
+          <h3>要針對什麼問題作搜索？</h3>
+          <div class="field"><textarea id="poolQ" placeholder="例如：都市建築如何在熱浪中自我降溫？／如何讓 LLM agent 保持長期專案記憶？"></textarea></div>
+          <div class="grid2">
+            <div class="field"><label>資源數（1–30）</label><input id="poolCount" type="number" min="1" max="30" value="30"></div>
+            <div class="row" style="align-items:flex-end"><button id="poolGo" class="primary">生成資源池</button></div>
+          </div>
+          <p class="hint">流程：AnySearch 搜索 → 連結的 LLM 逐條策展（只保留搜索結果中出現的 URL）→ 寫入 <code class="k">ei-sources.json</code>。生成資源池會替換現有池。</p>
+          <p class="hint" id="poolState" style="margin-top:6px"></p>
+        </div>
+        <div class="card" style="margin-bottom:12px">
+          <h3>資源池 <span id="srcCount" class="chip">0</span> <button id="srcReset" class="ghost small" style="float:right">清空</button></h3>
+          <div id="poolList" class="list"></div>
+        </div>
+        <div class="grid2">
+          <div class="card">
+            <h3>手動加入來源</h3>
+            <div class="field"><label>URL</label><input id="srcUrl" placeholder="https://…" spellcheck="false"></div>
+            <div class="field"><label>標題（可空）</label><input id="srcTitle" placeholder="來源名稱"></div>
+            <div class="field"><label>用途註記（可空）</label><input id="srcNote" placeholder="為什麼放進這條生產線"></div>
+            <div class="row"><button id="srcAdd" class="small">加入</button><span class="hint">重複 URL 會略過</span></div>
+          </div>
+          <div class="card">
+            <h3>搜尋逃生門</h3>
+            <div class="field"><label>推薦關鍵詞</label><select id="qPreset"></select></div>
+            <div class="field"><label>或自行輸入英文關鍵詞</label><input id="q" placeholder="quality diversity algorithms …"></div>
+            <div class="row"><button id="qGo" class="small">搜尋</button><span id="qState" class="hint"></span></div>
+            <p class="hint" style="margin-top:6px">關鍵詞留白時，直接搜尋上方「要針對什麼問題作搜索？」的內容。結果可逐條加入資源池。</p>
+            <div id="qOut" style="margin-top:8px"></div>
+          </div>
+        </div>
+      </div>
+      <div class="pane" id="pane-gen" hidden>
         <div class="stats">
           <div class="stat"><b id="stEl">–</b><span>elements</span></div>
           <div class="stat"><b id="stIdeas">–</b><span>trace ideas</span></div>
@@ -137,7 +170,7 @@ code.k{font-family:var(--mono);font-size:11px;color:#a7c7e7;background:#0b0f14;b
             <div class="field"><label>數量（1–60）</label><input id="genCount" type="number" min="1" max="60" value="12"></div>
             <div class="field"><label>seed（同 seed 同結果）</label><input id="genSeed" type="number" placeholder="留空＝現在時間"></div>
             <div class="row"><button id="genGo" class="primary">生成並寫入 archive</button><button id="genReload" class="ghost small">重新讀取</button></div>
-            <p class="hint" style="margin-top:8px">寫入 <code class="k">ei-archive/ideas.jsonl</code>、<code class="k">grid.md</code> 與 <code class="k">ei-runs/run-N.md</code>。每個想法佔一個空 cell、1–3 個 operator、2–3 個 element，欄位依 §5 trace 規格；模型端的 critic／selection 留在會話裡做。</p>
+            <p class="hint" style="margin-top:8px">寫入 <code class="k">ei-archive/ideas.jsonl</code>、<code class="k">grid.md</code> 與 <code class="k">ei-runs/run-N.md</code>。元素來自左欄的最終去重清單；模型端的 critic／selection 留在會話裡做。</p>
           </div>
           <div class="card">
             <h3>本輪結果</h3>
@@ -160,7 +193,7 @@ code.k{font-family:var(--mono);font-size:11px;color:#a7c7e7;background:#0b0f14;b
 <script>
 (function(){
   const $ = (id) => document.getElementById(id);
-  const state = { root: '', loaded: false, sources: [], grid: null, ideas: [], counts: {} };
+  const state = { root: '', loaded: false, sources: [], elements: [], elementRuns: [], ideas: [], counts: {} };
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const safeHref = (s) => /^(https?:\/\/|mailto:)/i.test(String(s || '')) ? esc(s) : '#';
   let toastTimer = 0;
@@ -169,9 +202,9 @@ code.k{font-family:var(--mono);font-size:11px;color:#a7c7e7;background:#0b0f14;b
     t.textContent = msg;
     t.className = 'toast on' + (bad ? ' bad' : '');
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => { t.className = 'toast' + (bad ? ' bad' : ''); }, 2600);
+    toastTimer = setTimeout(() => { t.className = 'toast' + (bad ? ' bad' : ''); }, 3200);
   }
-  const ERR_MAP = [['project folder not found', '找不到專案資料夾'], ['unauthorized', '登入狀態失效，請重新整理'], ['forbidden', '沒有權限'], ['generation lock timeout', '另一個生成正在進行，請稍後再試'], ['bad response', '伺服器回應異常']];
+  const ERR_MAP = [['project folder not found', '找不到專案資料夾'], ['unauthorized', '登入狀態失效，請重新整理'], ['forbidden', '沒有權限'], ['generation lock timeout', '另一個生成正在進行，請稍後再試'], ['bad response', '伺服器回應異常'], ['LLM 服務不可用', 'LLM 服務不可用（模型未設定）'], ['LLM 回應沒有 JSON', 'LLM 回應格式異常（沒有 JSON）']];
   function friendly(msg) {
     const m = String(msg || '');
     for (const [en, zh] of ERR_MAP) if (m.includes(en)) return m.replace(en, zh);
@@ -192,8 +225,8 @@ code.k{font-family:var(--mono);font-size:11px;color:#a7c7e7;background:#0b0f14;b
   }
   function renderSources() {
     $('srcCount').textContent = String(state.sources.length);
-    const box = $('srcList');
-    if (!state.sources.length) { box.innerHTML = '<div class="empty">尚無來源。載入專案後會從策展清單初始化。</div>'; return; }
+    const box = $('poolList');
+    if (!state.sources.length) { box.innerHTML = '<div class="empty">資源池是空的。填上方問題後按「生成資源池」，或用手動加入／搜尋逃生門。</div>'; return; }
     box.innerHTML = state.sources.map((s) => {
       const tags = (s.tags || []).map((t) => '<span class="tag">' + esc(t) + '</span>').join(' ');
       return '<div class="src"><div class="t">' + esc(s.title || s.url) + '</div>'
@@ -202,6 +235,20 @@ code.k{font-family:var(--mono);font-size:11px;color:#a7c7e7;background:#0b0f14;b
         + '<div class="meta">' + tags + '<span class="tag">' + esc(s.origin || 'user') + '</span>'
         + '<div class="spacer"></div><button class="small ghost" data-rm="' + esc(s.id) + '">移除</button></div></div>';
     }).join('');
+  }
+  function renderElements(items) {
+    $('elCount').textContent = String(items.length);
+    const box = $('elList');
+    if (!items.length) { box.innerHTML = '<div class="empty">尚無元素。先在資源池生成來源，再按「生成 elements」。</div>'; return; }
+    box.innerHTML = items.map((e) => '<div class="idea"><div class="h"><span class="id">' + esc(e.id) + '</span><span class="tag">' + esc(e.variable || '—') + '</span></div>'
+      + '<div class="body"><b>' + esc(e.noun) + '</b> — ' + esc(e.mechanism) + '</div></div>').join('');
+  }
+  function renderElementRuns(runs) {
+    const box = $('elRuns');
+    if (!runs.length) { box.innerHTML = '尚未生成。'; return; }
+    box.innerHTML = runs.slice().reverse().map((r) => '<div class="row" style="justify-content:space-between;border-bottom:1px solid var(--line);padding:4px 0">'
+      + '<span class="mono">run ' + esc(r.run) + '</span><span class="hint">' + esc(r.count) + ' 個</span></div>'
+      + '<div class="hint" style="padding:2px 0 6px">' + esc(r.meta || '') + '</div>').join('');
   }
   function renderStats(st) {
     $('stEl').textContent = String(st.elements.length);
@@ -240,6 +287,13 @@ code.k{font-family:var(--mono);font-size:11px;color:#a7c7e7;background:#0b0f14;b
       + (st.lastRun ? '<br>最新：<code class="k">' + esc(st.lastRun) + '</code>' : '<br>尚未生成 run log。')
       + '<br><br>每份 run log 依 §12.4 六欄表格記錄（轮次／相位／重复率／结论①／结论②／选择理由／参数版本），並帶 <code class="k">elements:N</code> 行供稽核。';
   }
+  function applyState(st) {
+    state.root = st.root; state.loaded = true;
+    state.sources = st.sources.items; state.ideas = st.ideas;
+    state.elements = st.elements || []; state.elementRuns = st.elementRuns || [];
+    renderSources(); renderElements(state.elements); renderElementRuns(state.elementRuns);
+    renderStats(st); renderIdeas(st.ideas); renderGrid(st); renderRuns(st);
+  }
   async function load() {
     const root = $('root').value.trim();
     if (!root) { toast('先填專案資料夾', true); return; }
@@ -247,15 +301,50 @@ code.k{font-family:var(--mono);font-size:11px;color:#a7c7e7;background:#0b0f14;b
     setMode('載入中…', 'warn');
     const st = await api('/api/emergent/state?root=' + encodeURIComponent(root));
     if (st.error) { setMode('載入失敗', 'bad'); toast(st.error, true); return; }
-    state.root = st.root; state.loaded = true;
-    state.sources = st.sources.items; state.ideas = st.ideas;
-    renderSources(); renderStats(st); renderIdeas(st.ideas); renderGrid(st); renderRuns(st);
+    applyState(st);
     $('genOut').innerHTML = '已載入：elements ' + st.elements.length + '、ideas ' + st.ideaCount + '、runs ' + st.runs + (st.lastRun ? '（最新 ' + esc(st.lastRun) + '）' : '') + '。';
     setMode('已載入 · ' + st.root.split('/').pop(), 'ok');
     $('root').value = st.root;
     try { localStorage.setItem('ec-studio-root', st.root); } catch (e) {}
-    if (st.sources.created) toast('已建立資源池：' + st.sources.items.length + ' 條策展來源');
-    if (st.elementsCreated) toast('archive 尚無 ELEMENTS；首次生成時會寫入 10 個起始 element');
+    if (st.sources.created) toast('資源池已建立（空）：先填問題生成來源');
+    if (!st.elements.length) toast('ELEMENTS 是空的：先用 LLM 從資源池生成 elements');
+  }
+  async function refreshState() {
+    const st = await api('/api/emergent/state?root=' + encodeURIComponent(state.root));
+    if (st.error) return st;
+    applyState(st);
+    return st;
+  }
+  async function generatePool() {
+    if (!state.loaded) { toast('先載入專案', true); return; }
+    const question = $('poolQ').value.trim();
+    if (!question) { toast('先填「要針對什麼問題作搜索？」', true); return; }
+    const count = Number($('poolCount').value) || 30;
+    $('poolGo').disabled = true;
+    $('poolState').innerHTML = '<span class="spin"></span>AnySearch 搜索 → LLM 策展中…（最長 2 分鐘）';
+    setMode('資源池生成中…', 'warn');
+    const out = await api('/api/emergent/pool', { method: 'POST', body: JSON.stringify({ root: state.root, question, count }) });
+    $('poolGo').disabled = false;
+    if (out.error) { $('poolState').textContent = out.error; setMode('資源池失敗', 'bad'); toast(out.error, true); return; }
+    state.sources = out.sources; renderSources();
+    $('poolState').textContent = '已生成 ' + out.count + ' 條（' + out.via + '）' + (out.model ? ' · 策展模型 ' + out.model : '') + (out.llmError ? ' · LLM 未參與：' + out.llmError : '');
+    setMode('資源池已生成', 'ok');
+    toast('資源池已寫入 ' + out.count + ' 條來源');
+  }
+  async function generateElements() {
+    if (!state.loaded) { toast('先載入專案', true); return; }
+    const raw = $('elN').value.trim();
+    const count = raw ? Number(raw) : null;
+    $('elGo').disabled = true;
+    $('elState').innerHTML = '<span class="spin"></span>LLM 第一性原理拆解中…';
+    setMode('拆解中…', 'warn');
+    const out = await api('/api/emergent/elements', { method: 'POST', body: JSON.stringify({ root: state.root, count, question: $('poolQ').value.trim() }) });
+    $('elGo').disabled = false;
+    if (out.error) { $('elState').textContent = out.error; setMode('拆解失敗', 'bad'); toast(out.error, true); return; }
+    $('elState').textContent = 'run ' + out.run + '：新增 ' + out.added + ' 個，最終去重 ' + out.total + ' 個（' + out.model + '）';
+    setMode('已拆解', 'ok');
+    toast('ELEMENTS.md 已寫入 run ' + out.run + '（' + out.added + ' 個）');
+    await refreshState();
   }
   async function generate() {
     if (!state.loaded) { toast('先載入專案', true); return; }
@@ -276,12 +365,6 @@ code.k{font-family:var(--mono);font-size:11px;color:#a7c7e7;background:#0b0f14;b
     }
     await refreshState();
   }
-  async function refreshState() {
-    const st = await api('/api/emergent/state?root=' + encodeURIComponent(state.root));
-    if (st.error) return;
-    state.sources = st.sources.items; state.ideas = st.ideas;
-    renderSources(); renderStats(st); renderIdeas(st.ideas); renderGrid(st); renderRuns(st);
-  }
   async function addSource(src) {
     if (!state.loaded) { toast('先載入專案', true); return; }
     const out = await api('/api/emergent/sources', { method: 'POST', body: JSON.stringify({ root: state.root, action: 'add', source: src }) });
@@ -290,17 +373,31 @@ code.k{font-family:var(--mono);font-size:11px;color:#a7c7e7;background:#0b0f14;b
     state.sources = out.items; renderSources(); toast('已加入資源池');
   }
   async function search() {
-    const q = $('q').value.trim();
-    if (!q) return;
-    $('qState').textContent = '搜尋中…';
+    if (!state.loaded) { toast('先載入專案', true); return; }
+    const free = $('q').value.trim();
+    const q = free || $('poolQ').value.trim();
+    if (!q) { toast('先填問題或關鍵詞', true); return; }
+    $('qState').innerHTML = '<span class="spin"></span>搜尋中…';
     const out = await api('/api/emergent/search', { method: 'POST', body: JSON.stringify({ query: q }) });
-    $('qState').textContent = out.ok ? out.results.length + ' 筆' : '失敗';
+    $('qState').textContent = out.ok ? out.results.length + ' 筆（' + (out.provider || '—') + '）' : '失敗';
     if (!out.ok) { $('qOut').innerHTML = '<div class="hint">' + esc(out.error) + '</div>'; return; }
     $('qOut').innerHTML = out.results.map((r) => '<div class="result"><div class="t">' + esc(r.title) + '</div><div class="u">' + esc(r.url) + '</div>'
-      + (r.snippet ? '<div class="s">' + esc(r.snippet.slice(0, 220)) + '</div>' : '')
+      + (r.snippet ? '<div class="s">' + esc(String(r.snippet).slice(0, 220)) + '</div>' : '')
       + '<div class="row" style="margin-top:5px"><button class="small" data-addq="' + esc(r.url) + '" data-title="' + esc(r.title) + '">加入資源池</button></div></div>').join('')
       + (out.results.length ? '' : '<div class="hint">沒有結果，換個關鍵詞。</div>');
   }
+  const PRESETS = [
+    ['quality diversity algorithms', 'quality diversity algorithms'],
+    ['novelty search', 'novelty search evolutionary computation'],
+    ['open-ended evolution', 'open-ended evolution artificial life'],
+    ['MAP-Elites', 'MAP-Elites quality diversity illumination'],
+    ['LLM agent long-term memory', 'LLM agent long-term memory architecture'],
+    ['first principles decomposition', 'first principles decomposition engineering design'],
+    ['emergence / self-organization', 'emergence self-organization complex systems'],
+    ['constraint satisfaction', 'constraint satisfaction combinatorial search'],
+    ['program synthesis', 'program synthesis evolutionary search'],
+    ['AI scientific discovery', 'AI scientific discovery hypothesis generation'],
+  ];
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { try { parent.postMessage({ type: 'ecx-close' }, '*'); } catch (err) {} } });
   document.addEventListener('click', async (ev) => {
     const rm = ev.target.closest('[data-rm]');
@@ -312,7 +409,7 @@ code.k{font-family:var(--mono);font-size:11px;color:#a7c7e7;background:#0b0f14;b
     }
     const addq = ev.target.closest('[data-addq]');
     if (addq) {
-      await addSource({ url: addq.getAttribute('data-addq'), title: addq.getAttribute('data-title'), note: 'search: ' + $('q').value.trim(), origin: 'search' });
+      await addSource({ url: addq.getAttribute('data-addq'), title: addq.getAttribute('data-title'), note: 'search: ' + ($('q').value.trim() || $('poolQ').value.trim()), origin: 'search' });
       return;
     }
     const tab = ev.target.closest('.tab');
@@ -325,6 +422,8 @@ code.k{font-family:var(--mono);font-size:11px;color:#a7c7e7;background:#0b0f14;b
   $('root').addEventListener('keydown', (e) => { if (e.key === 'Enter') load(); });
   $('genGo').onclick = generate;
   $('genReload').onclick = load;
+  $('poolGo').onclick = generatePool;
+  $('elGo').onclick = generateElements;
   $('srcAdd').onclick = () => {
     const url = $('srcUrl').value.trim();
     if (!url) { toast('填 URL', true); return; }
@@ -333,19 +432,21 @@ code.k{font-family:var(--mono);font-size:11px;color:#a7c7e7;background:#0b0f14;b
   };
   $('qGo').onclick = search;
   $('q').addEventListener('keydown', (e) => { if (e.key === 'Enter') search(); });
+  $('qPreset').onchange = () => { const v = $('qPreset').value; if (v) $('q').value = v; };
   $('srcReset').onclick = async () => {
     if (!state.loaded) { toast('先載入專案', true); return; }
-    if (!confirm('恢復內建 20 條策展來源？你手動加入的來源會消失。')) return;
+    if (!confirm('清空整個資源池？')) return;
     const out = await api('/api/emergent/sources', { method: 'POST', body: JSON.stringify({ root: state.root, action: 'reset' }) });
     if (out.error) { toast(out.error, true); return; }
-    state.sources = out.items; renderSources(); toast('已恢復策展清單');
+    state.sources = out.items; renderSources(); toast('資源池已清空');
   };
   (function init() {
+    $('qPreset').innerHTML = '<option value="">— 選擇推薦關鍵詞 —</option>' + PRESETS.map(([label, q]) => '<option value="' + esc(q) + '">' + esc(label) + '</option>').join('');
     const p = new URLSearchParams(location.search);
     let root = p.get('root') || '';
     if (!root) { try { root = localStorage.getItem('ec-studio-root') || ''; } catch (e) {} }
     $('root').value = root;
-    renderSources();
+    renderSources(); renderElements([]); renderElementRuns([]);
     if (root) load();
   })();
 })();

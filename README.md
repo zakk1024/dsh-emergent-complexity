@@ -258,3 +258,19 @@ Skill 內引用的 13 條文獻屬各自原作者；本 repo 只引用連結與�
 **資源池**：`assets/source-pack.json` 內建 20 條可追溯文獻（context engineering、novelty search、
 MAP-Elites、FunSearch/AlphaEvolve、open-endedness、agent memory 等），可增刪；搜尋逃生門用
 arXiv → Wikipedia → DuckDuckGo → Bing 的順序，不需要 API key。
+
+## 1.2.0 — LLM 資源池、元素欄、搜尋逃生門
+
+1.2.0 把「資源池」與「元素」改成 **LLM 參與** 的兩段，而不是預先塞好的靜態內容：
+
+- **資源池不再自動載入**。新專案載入後是空的；到「資源池」分頁輸入你的問題（例如「如何讓都市建築在熱浪中自我降溫？」），按「生成資源池」：
+  1. 伺服器用連結的搜尋服務（AnySearch provider，若沒有則退回 keyless 引擎）對問題做多語查詢；
+  2. 把搜尋結果交給連結的 LLM（`ctx.llm`）策展，只保留它認為相關的條目，補上中文註記與 tags；
+  3. 寫入 `ei-sources.json`（origin `llm-anysearch`），上限 30 條。
+  這個流程需要 **LLM provider 與搜尋 provider 都在線**；兩者都由 DSH 主機服務提供，插件本身不帶金鑰。
+- **元素欄（左欄）**：填數量（留白＝由 LLM 依資源池自行決定 5–15），按「生成 elements」。LLM 以第一性原理把資源池拆成 element（名詞／機制／可賦值 variable／拆解理由），每一次按鈕都是一個 run，全部追加到 `ELEMENTS.md` 的「拆解紀錄」（id 用 `R<run>-<nn>`，不會被生成器讀到）；同時重寫「生成器最終清單」，把跨 run 去重後的 element 以 `E01..` 列出——生成器只讀這張表。
+- **搜尋逃生門**：英文關鍵詞下拉（10 個預設）＋自由輸入欄；輸入空白時，搜尋按鈕改抓「資源池」分頁的問題。搜尋結果可逐條「加入資源池」。
+- 生成器在 `ELEMENTS` 為空時會回 409 並提示先做元素拆解（不再偷偷塞 10 個起始 element）。
+- 新增診斷端點 `GET /api/emergent/llm`（provider/model 是否可用）與 `GET /api/emergent/llm-test`（原始串流輸出）。
+
+需求：`DSH_LOCAL_API_KEY`（或你在 DSH Models 頁設定的 provider 憑據）與 AnySearch 搜尋 provider。缺少憑據時 API 會回友善中文錯誤，不會寫壞 archive。
